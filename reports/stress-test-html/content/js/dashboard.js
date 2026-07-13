@@ -133,7 +133,7 @@ $(document).ready(function() {
         widgets: ['zebra']
     });
 
-    var data = {"OkPercent": 99.99166666666666, "KoPercent": 0.008333333333333333};
+    var data = {"OkPercent": 99.64592817400101, "KoPercent": 0.35407182599898834};
     var dataset = [
         {
             "label" : "FAIL",
@@ -173,7 +173,7 @@ $(document).ready(function() {
     });
 
     // Creates APDEX table
-    createTable($("#apdexTable"), {"supportsControllersDiscrimination": true, "overall": {"data": [0.9967708333333334, 500, 1500, "Total"], "isController": false}, "titles": ["Apdex", "T (Toleration threshold)", "F (Frustration threshold)", "Label"], "items": [{"data": [1.0, 500, 1500, "GET Single Post"], "isController": false}, {"data": [0.9905625, 500, 1500, "Create Post"], "isController": false}, {"data": [0.99975, 500, 1500, "GET All Posts"], "isController": false}]}, function(index, item){
+    createTable($("#apdexTable"), {"supportsControllersDiscrimination": true, "overall": {"data": [0.5862417804754679, 500, 1500, "Total"], "isController": false}, "titles": ["Apdex", "T (Toleration threshold)", "F (Frustration threshold)", "Label"], "items": [{"data": [0.5902192242833052, 500, 1500, "GET Single Post"], "isController": false}, {"data": [0.6262626262626263, 500, 1500, "Create Post"], "isController": false}, {"data": [0.5775716694772344, 500, 1500, "GET All Posts"], "isController": false}]}, function(index, item){
         switch(index){
             case 0:
                 item = item.toFixed(3);
@@ -187,7 +187,7 @@ $(document).ready(function() {
     }, [[0, 0]], 3);
 
     // Create statistics table
-    createTable($("#statisticsTable"), {"supportsControllersDiscrimination": true, "overall": {"data": ["Total", 24000, 2, 0.008333333333333333, 125.02004166666683, 5, 1047, 26.0, 334.0, 339.0, 420.0, 377.73265971009016, 3884.7877424030485, 69.34944771353699], "isController": false}, "titles": ["Label", "#Samples", "FAIL", "Error %", "Average", "Min", "Max", "Median", "90th pct", "95th pct", "99th pct", "Transactions/s", "Received", "Sent"], "items": [{"data": ["GET Single Post", 8000, 0, 0.0, 11.025499999999951, 5, 316, 9.0, 18.0, 23.0, 43.98999999999978, 126.66645555590742, 186.9072405712657, 17.317679470534216], "isController": false}, {"data": ["Create Post", 8000, 0, 0.0, 337.4127499999996, 320, 961, 329.0, 344.0, 367.0, 560.9799999999996, 126.04578613181239, 165.67550755585404, 35.20428649222455], "isController": false}, {"data": ["GET All Posts", 8000, 2, 0.025, 26.621874999999985, 8, 1047, 20.0, 46.0, 56.0, 105.97999999999956, 126.57627011376043, 3552.170189706185, 17.058130152049742], "isController": false}]}, function(index, item){
+    createTable($("#statisticsTable"), {"supportsControllersDiscrimination": true, "overall": {"data": ["Total", 1977, 7, 0.35407182599898834, 2737.5209914011107, 7, 786440, 726.0, 927.4000000000001, 1399.2999999999997, 21083.44, 2.3426363368135172, 40.61220675943009, 0.3496409449907041], "isController": false}, "titles": ["Label", "#Samples", "FAIL", "Error %", "Average", "Min", "Max", "Median", "90th pct", "95th pct", "99th pct", "Transactions/s", "Received", "Sent"], "items": [{"data": ["GET Single Post", 593, 1, 0.16863406408094436, 1105.153456998313, 7, 53668, 707.0, 809.8000000000001, 1267.499999999993, 21070.12, 5.031307800648216, 7.4646189770664, 0.6867141232967369], "isController": false}, {"data": ["Create Post", 198, 0, 0.0, 1022.6818181818181, 248, 21324, 801.0, 834.4, 1008.2999999999981, 21315.09, 1.7063375790689257, 2.2239229417302955, 0.4749168241222703], "isController": false}, {"data": ["GET All Posts", 1186, 6, 0.5059021922428331, 3839.993254637436, 9, 786440, 734.0, 952.0, 1674.8999999999992, 21090.26, 1.4053448130808452, 39.26391172685298, 0.18843403292488276], "isController": false}]}, function(index, item){
         switch(index){
             // Errors pct
             case 3:
@@ -217,7 +217,7 @@ $(document).ready(function() {
     }, [[0, 0]], 0, summaryTableHeader);
 
     // Create error table
-    createTable($("#errorsTable"), {"supportsControllersDiscrimination": false, "titles": ["Type of error", "Number of errors", "% in errors", "% in all samples"], "items": [{"data": ["The operation lasted too long: It took 1,030 milliseconds, but should not have lasted longer than 1,000 milliseconds.", 1, 50.0, 0.004166666666666667], "isController": false}, {"data": ["The operation lasted too long: It took 1,047 milliseconds, but should not have lasted longer than 1,000 milliseconds.", 1, 50.0, 0.004166666666666667], "isController": false}]}, function(index, item){
+    createTable($("#errorsTable"), {"supportsControllersDiscrimination": false, "titles": ["Type of error", "Number of errors", "% in errors", "% in all samples"], "items": [{"data": ["Non HTTP response code: java.net.SocketException/Non HTTP response message: Socket closed", 4, 57.142857142857146, 0.20232675771370764], "isController": false}, {"data": ["Non HTTP response code: java.net.SocketTimeoutException/Non HTTP response message: Read timed out", 3, 42.857142857142854, 0.15174506828528073], "isController": false}]}, function(index, item){
         switch(index){
             case 2:
             case 3:
@@ -228,7 +228,7 @@ $(document).ready(function() {
     }, [[1, 1]]);
 
         // Create top5 errors by sampler
-    createTable($("#top5ErrorsBySamplerTable"), {"supportsControllersDiscrimination": false, "overall": {"data": ["Total", 24000, 2, "The operation lasted too long: It took 1,030 milliseconds, but should not have lasted longer than 1,000 milliseconds.", 1, "The operation lasted too long: It took 1,047 milliseconds, but should not have lasted longer than 1,000 milliseconds.", 1, "", "", "", "", "", ""], "isController": false}, "titles": ["Sample", "#Samples", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors"], "items": [{"data": [], "isController": false}, {"data": [], "isController": false}, {"data": ["GET All Posts", 8000, 2, "The operation lasted too long: It took 1,030 milliseconds, but should not have lasted longer than 1,000 milliseconds.", 1, "The operation lasted too long: It took 1,047 milliseconds, but should not have lasted longer than 1,000 milliseconds.", 1, "", "", "", "", "", ""], "isController": false}]}, function(index, item){
+    createTable($("#top5ErrorsBySamplerTable"), {"supportsControllersDiscrimination": false, "overall": {"data": ["Total", 1977, 7, "Non HTTP response code: java.net.SocketException/Non HTTP response message: Socket closed", 4, "Non HTTP response code: java.net.SocketTimeoutException/Non HTTP response message: Read timed out", 3, "", "", "", "", "", ""], "isController": false}, "titles": ["Sample", "#Samples", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors", "Error", "#Errors"], "items": [{"data": ["GET Single Post", 593, 1, "Non HTTP response code: java.net.SocketTimeoutException/Non HTTP response message: Read timed out", 1, "", "", "", "", "", "", "", ""], "isController": false}, {"data": [], "isController": false}, {"data": ["GET All Posts", 1186, 6, "Non HTTP response code: java.net.SocketException/Non HTTP response message: Socket closed", 4, "Non HTTP response code: java.net.SocketTimeoutException/Non HTTP response message: Read timed out", 2, "", "", "", "", "", ""], "isController": false}]}, function(index, item){
         return item;
     }, [[0, 0]], 0);
 
