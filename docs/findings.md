@@ -43,3 +43,33 @@ This is a client side error, the local machine generating the load ran out of av
 - Re-run the spike test from a cloud based load injector to remove the client side bottleneck entirely and get a true picture of server side spike behavior at higher intensities than 150 concurrent users.
 - Investigate the isolated GET All Posts failures and the recurring ~21 second outlier specifically, rather than treating the overall 0.20% error rate as fully explained.
 - Add a soak test (4+ hours at moderate load) to check for gradual degradation or memory leaks, which none of the tests in this project were designed to catch.
+
+---
+
+## v2 Findings: Think Time and Traffic Distribution
+
+### What v2 was testing
+
+The v2 update introduced two meaningful changes to the test design: a Gaussian Random Timer (500ms ± 200ms) between requests to simulate real user think time, and Throughput Controllers distributing traffic 60/30/10 across GET All Posts, GET Single Post, and Create Post respectively. The goal was to make the simulation more realistic and demonstrate a wider range of JMeter capability, not to produce a better result than v1.
+
+### Baseline and Load Test: Clean
+
+Both v2 baseline (50 users) and v2 load test (100 users) completed at 0% error rate. Response time averages are approximately 500ms higher than their v1 equivalents across all endpoints. This is entirely attributable to the Gaussian timer delay being included in JMeter's sampler elapsed time measurement, not to any change in server behaviour. The meaningful comparison within v2 is between test types, not against v1 absolute numbers.
+
+Throughput at 100 users (13.49 req/s total) is lower than v1's 47.64 req/s at the same user count, again because each thread now spends time waiting between requests rather than firing continuously. Lower throughput with think time active is the correct and expected result.
+
+### Stress Test: Incomplete, but Instructive
+
+The 200-user stress run was force-stopped before completion. The visible symptoms were thread queue buildup and a test that appeared to stall after accumulating 1,977 samples. The numbers that did complete tell an interesting story: median response time was 726ms (close to baseline) while the mean was 2,738ms, and the max was 786,440ms (13 minutes). The extreme divergence between median and mean means the majority of requests completed normally, but a small number of threads hung for very long periods before timing out.
+
+The root cause is the interaction between high concurrency and think time. At 200 users with a 500ms timer on every request, threads hold connections for longer than in v1. On a public API with variable server-side latency, some connections queue up behind slow responses rather than cycling quickly. At 100 users this self-resolves within the test run. At 200 users on this particular public target the queuing compounded until the test became practically unrunnable without a force stop.
+
+This is a real and useful finding. It shows that adding think time to a test doesn't just make results more realistic, it also changes what thread counts are feasible on a given machine against a given target. In a production performance testing engagement this would lead to either distributing load across multiple generators or tuning thread counts down and running longer to achieve the same total request volume.
+
+The stress test results are included in this repo for transparency with this explanation attached, rather than omitted to preserve a clean narrative.
+
+### Spike Test: Cleaner Than v1 Despite Outliers
+
+The v2 spike test completed with 0.11% error rate across 13,951 samples. The extreme max response times (402,450ms for GET All Posts and GET Single Post) are single outlier connections, almost certainly one hung thread per endpoint during the spike window. The median of 42ms across the total tells the real story: the vast majority of requests during the spike completed quickly, and the Gaussian timer actually helped here by spreading request timing slightly rather than every thread firing simultaneously at the spike boundary.
+
+The lower error rate compared to v1's initial spike run (0.11% vs 23.62%) is partly explained by the think time spreading concurrent connection demand more naturally across the spike window, reducing the port exhaustion pressure that caused v1's failures.

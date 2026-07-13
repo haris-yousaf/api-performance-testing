@@ -16,6 +16,15 @@ Endpoints tested:
 | `/posts/1` | GET | Read a single resource |
 | `/posts` | POST | Write operation |
 
+## Versions
+
+This repo documents two iterations of the same test suite:
+
+- **v1**: baseline, load, stress (3 runs up to 800 users), spike. Covers the core test types with assertions and CSV parameterization.
+- **v2**: same test types with a Gaussian Random Timer (think time), Throughput Controllers (realistic traffic distribution), and Duration Assertions removed. Documents what changes when you make a simulation more realistic and what new constraints that introduces.
+
+Both versions are documented in `docs/` under clearly labelled sections rather than separate files.
+
 ## Tools
 
 - Apache JMeter 5.6
@@ -36,6 +45,15 @@ Full methodology, thread group configuration, and pass/fail criteria for each ar
 
 ## Key findings
 
+**v2 (with think time and traffic distribution)**
+
+- Gaussian Random Timer (500ms ± 200ms) raised average response times by ~500ms vs v1 across all endpoints, as expected, since timer delay is included in JMeter's elapsed time measurement.
+- Throughput Controllers confirmed working correctly: 60/30/10 sample split verified against total sample counts on every run.
+- Stress test at 200 users with think time active caused thread queue buildup and was force-stopped. Documented honestly rather than omitted: adding think time changes what concurrency levels are feasible on a single local machine against a public API.
+- Spike test completed at 0.11% error rate, cleaner than v1's initial spike run, partly because think time spreads concurrent connection demand more naturally across the spike window.
+
+**v1 (baseline)**
+
 - Load test at 100 concurrent users ran with a 0.13% error rate (4 failed requests out of 3,000), most likely transient network noise against a public API rather than a systemic issue, and is reported as observed rather than rounded down to zero.
 - Stress testing scaled from 200 to 800 concurrent users with throughput scaling almost linearly and no breaking point found. Documented as a property of JSONPlaceholder's CDN backed infrastructure rather than a finding about the test methodology.
 - Spike testing initially returned a 22% error rate. Root cause analysis traced this to local TCP port exhaustion on the test machine (`java.net.BindException`), not server side failure. After tuning HTTP client connection properties and adjusting spike intensity, the re run dropped error rate to 0.37%. Both runs are kept in this repo deliberately. The full diagnostic story is in [`docs/findings.md`](docs/findings.md).
@@ -46,7 +64,7 @@ Full numbers for every run are in [`docs/results-summary.md`](docs/results-summa
 
 ```
 api-performance-testing/
-├── jmeter/        JMeter test plan (.jmx file consisting all test plans enabled/disabled as needed)
+├── jmeter/        JMeter test plans (.jmx files)
 ├── reports/       Generated HTML dashboard reports and raw .jtl result files
 ├── docs/
 │   ├── test-plan.md         Methodology, scope, thread group configs, pass/fail criteria
@@ -58,7 +76,7 @@ api-performance-testing/
 ## How to reproduce
 
 1. Install [Apache JMeter](https://jmeter.apache.org/download_jmeter.cgi) and the [jp@gc Ultimate Thread Group plugin](https://jmeter-plugins.org/) via the Plugins Manager.
-2. Open `.jmx` file from `jmeter/` in JMeter.
+2. Open any `.jmx` file from `jmeter/` in JMeter.
 3. Run the test plan. Results write to `reports/`.
 4. To generate an HTML dashboard from a result file:
    ```bash

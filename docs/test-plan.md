@@ -129,3 +129,63 @@ A CSV file (`test-data.csv`) feeds varying `firstname`, `lastname`, and `totalpr
 | Load Test | Error rate at or near 0% (low single-digit failures attributable to transient public-network noise are acceptable), P95 response time within baseline range |
 | Stress Test | Error rate stays under 5% and P95 stays under 2,000ms at the given user count; breaking point is the first run where either threshold is crossed |
 | Spike Test | System returns to baseline level response times after the spike ends, error rate during/after spike attributable to a clearly identified root cause |
+
+---
+
+## 9. v2 Enhancements
+
+After completing the initial test suite, the test plan was updated to introduce three additional JMeter elements that make the simulation more realistic and demonstrate a wider range of tool capability.
+
+### What changed and why
+
+**Gaussian Random Timer**
+
+Added at Thread Group level so it applies to all requests in every Thread Group.
+
+| Setting | Value |
+|---|---|
+| Constant Delay | 500ms |
+| Deviation | 200ms |
+
+This means each virtual user waits between 300ms and 700ms before firing each request. The v1 tests had zero think time, every thread fired requests back to back as fast as the server could respond. Real users don't behave that way. The timer introduces the pause between actions that makes concurrent load simulation meaningful.
+
+Direct consequence: all v2 response time averages are higher than v1 by roughly 500ms. This is expected and correct, not a regression. The timer delay is included in JMeter's sampler elapsed time, so it inflates averages relative to v1. The important comparison is error rate and relative degradation across test types, not absolute response time vs v1.
+
+**Throughput Controller (Percent Executions mode)**
+
+Three Throughput Controllers replace the flat equal-split request structure from v1:
+
+| Controller | Endpoints covered | Weight |
+|---|---|---|
+| Throughput Controller 1 | GET All Posts | 60% |
+| Throughput Controller 2 | GET Single Post | 30% |
+| Throughput Controller 3 | Create Post | 10% |
+
+This reflects a realistic API traffic distribution: collection reads are the most common operation, single resource reads are moderately common, and write operations are the minority. In v1 all three endpoints received equal traffic regardless of realistic usage patterns.
+
+Sample count verification: at 50 users / 5 loops (250 total samples), the split produces 150 / 75 / 25 samples per endpoint, confirming the 60/30/10 distribution is working correctly.
+
+**Duration Assertion removal**
+
+The Duration Assertions from v1 (2,000ms threshold on GET, 1,000ms on POST) were removed for v2. With a 500ms Gaussian timer added to every request, any server response taking more than 1,500ms would trigger the assertion even if the server itself responded well within acceptable time. This would produce misleading failures attributable to test design rather than server behaviour. Response Assertions (HTTP status code checks) were kept, as these remain valid regardless of think time.
+
+### v2 Thread Group Configurations
+
+**Baseline:** 50 users, 30s ramp-up, 5 loops (250 total samples at 60/30/10 split)
+
+**Load Test:** 100 users, 60s ramp-up, 10 loops (1,000 total samples per endpoint group)
+
+**Stress Test:** 200 users, 60s ramp-up, 10 loops. Note: this run was force-stopped before completion due to thread queue buildup at 200 users with think time active. See findings for full explanation.
+
+**Spike Test (jp@gc Ultimate Thread Group):**
+
+| Phase | Start Threads | Initial Delay | Startup Time | Hold | Shutdown |
+|---|---|---|---|---|---|
+| Normal | 50 | 0s | 10s | 100s | 0s |
+| Spike | 150 | 40s | 5s | 30s | 5s |
+
+| Test | Pass condition |
+|---|---|
+| Load Test | Error rate at or near 0% (low single-digit failures attributable to transient public-network noise are acceptable), P95 response time within baseline range |
+| Stress Test | Error rate stays under 5% and P95 stays under 2,000ms at the given user count; breaking point is the first run where either threshold is crossed |
+| Spike Test | System returns to baseline level response times after the spike ends, error rate during/after spike attributable to a clearly identified root cause |

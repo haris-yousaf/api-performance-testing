@@ -66,3 +66,62 @@ Thread schedule used for this run (jp@gc Ultimate Thread Group):
 | **Total** | **42,349** | **208.42** | **70** | **441** | **596** | **905** | **5** | **21,347** | **0.20%** | **366.72** |
 
 Error rate dropped from 23.62% to 0.20% after reducing spike intensity from 250 to 150 concurrent users and tuning `httpclient4.time_to_live` and `httpclient4.idletimeout` in JMeter's `user.properties`. Notably, all 86 remaining errors are concentrated entirely in the GET All Posts endpoint (0.607% error rate there specifically), while GET Single Post and Create Post both completed at 0.00% error. The single 21,347ms outlier also belongs to GET All Posts. This points to one specific slow or hung connection during the spike window rather than a systemic issue across the test.
+
+---
+
+## v2 Results (Gaussian Random Timer + Throughput Controllers)
+
+All v2 tests use a Gaussian Random Timer (500ms constant delay, 200ms deviation) and Throughput Controllers splitting traffic 60% GET All Posts / 30% GET Single Post / 10% Create Post. Response time averages are higher than v1 by approximately 500ms across the board due to think time being included in JMeter's sampler elapsed time. This is expected behavior, not degradation.
+
+Duration Assertions were removed for v2. Response Assertions (HTTP status code checks) remain active.
+
+### v2 Baseline (50 users, 30s ramp-up, 5 loops, 250 total samples)
+
+| Endpoint | Samples | Average | Median | P90 | P95 | P99 | Min | Max | Error % | Throughput |
+|---|---|---|---|---|---|---|---|---|---|---|
+| GET All Posts | 150 | 778ms | 746ms | 907ms | 1,174ms | 2,008ms | 257 | 2,198 | 0.00% | 4.24 |
+| GET Single Post | 75 | 698ms | 714ms | 771ms | 814ms | 1,639ms | 230 | 1,639 | 0.00% | 2.20 |
+| Create Post | 25 | 787ms | 808ms | 880ms | 918ms | 924ms | 331 | 924 | 0.00% | 0.77 |
+| **Total** | **250** | **755ms** | **740ms** | **860ms** | **951ms** | **1,776ms** | **230** | **2,198** | **0.00%** | **7.02** |
+
+Sample split confirms 60/30/10 Throughput Controller distribution is working correctly.
+
+### v2 Load Test (100 users, 60s ramp-up, 10 loops, 1,000 total samples)
+
+| Endpoint | Samples | Average | Median | P90 | P95 | P99 | Min | Max | Error % | Throughput |
+|---|---|---|---|---|---|---|---|---|---|---|
+| GET All Posts | 600 | 726ms | 736ms | 784ms | 959ms | 1,587ms | 257 | 1,924 | 0.00% | 8.22 |
+| GET Single Post | 300 | 696ms | 710ms | 748ms | 867ms | 1,648ms | 227 | 1,718 | 0.00% | 4.15 |
+| Create Post | 100 | 794ms | 807ms | 836ms | 989ms | 1,551ms | 324 | 1,553 | 0.00% | 1.42 |
+| **Total** | **1,000** | **724ms** | **732ms** | **812ms** | **957ms** | **1,587ms** | **227** | **1,924** | **0.00%** | **13.49** |
+
+0% error rate. Response times flat compared to v2 baseline, throughput nearly doubled in line with user count doubling.
+
+### v2 Stress Test (200 users, 60s ramp-up — incomplete run)
+
+| Endpoint | Samples | Average | Median | P90 | P95 | P99 | Min | Max | Error % | Throughput |
+|---|---|---|---|---|---|---|---|---|---|---|
+| GET All Posts | 1,186 | 3,840ms | 734ms | 952ms | 1,675ms | 47,309ms | 9 | 786,440 | 0.51% | 1.41 |
+| GET Single Post | 593 | 1,105ms | 707ms | 810ms | 1,268ms | 21,070ms | 7 | 53,668 | 0.17% | 5.03 |
+| Create Post | 198 | 1,023ms | 801ms | 834ms | 1,008ms | 21,315ms | 248 | 21,324 | 0.00% | 1.71 |
+| **Total** | **1,977** | **2,738ms** | **726ms** | **927ms** | **1,399ms** | **21,083ms** | **7** | **786,440** | **0.35%** | **2.34** |
+
+This run was force-stopped before completion. See v2 findings for full explanation. Results are included for transparency but should not be treated as a definitive stress test outcome.
+
+### v2 Spike Test (50 base / 150 spike, with Gaussian timer)
+
+Thread schedule:
+
+| Phase | Start Threads | Initial Delay | Startup Time | Hold | Shutdown |
+|---|---|---|---|---|---|
+| Normal | 50 | 0s | 10s | 100s | 0s |
+| Spike | 150 | 40s | 5s | 30s | 5s |
+
+| Endpoint | Samples | Average | Median | P90 | P95 | P99 | Min | Max | Error % | Throughput |
+|---|---|---|---|---|---|---|---|---|---|---|
+| GET All Posts | 8,408 | 495ms | 42ms | 502ms | 520ms | 1,096ms | 24 | 402,450 | 0.10% | 19.15 |
+| GET Single Post | 4,181 | 299ms | 35ms | 477ms | 493ms | 1,062ms | 6 | 402,143 | 0.14% | 9.53 |
+| Create Post | 1,362 | 410ms | 279ms | 572ms | 594ms | 1,314ms | 246 | 23,523 | 0.07% | 12.77 |
+| **Total** | **13,951** | **428ms** | **42ms** | **497ms** | **523ms** | **1,096ms** | **6** | **402,450** | **0.11%** | **31.77** |
+
+0.11% error rate. The extreme max values (402,450ms) are single outlier connections, not representative of typical behaviour. Median of 42ms confirms the majority of requests completed quickly.
